@@ -12,6 +12,7 @@ error NftMarketplace__PriceMustBeAboveZero();
 error NftMarketplace__NotApprovedForMarketplace();
 error NftMarketplace__NotOwner();
 error NftMarketplace__NotListed(address nftAddress, uint256 tokenId);
+error NftMarketplace__PriceNotMet(address nftAddress, uint256 tokenId);
 
 contract NftMarketplace {
     struct Listing {
@@ -25,12 +26,21 @@ contract NftMarketplace {
         uint256 indexed tokenId,
         uint256 price
     );
+    event ItemBought(
+        address indexed buyer,
+        address indexed nftAddress,
+        uint256 indexed tokenId,
+        uint256 price
+    );
 
     // NFT Contract Address -> NFT tokenId -> Listing
     mapping(address => mapping(uint256 => Listing)) private s_listings;
 
+    // Seller Address -> Amount Earned
+    mapping(address => uint256) private s_proceeds;
+
     ////////////////////////
-    //// MODIFIERS      ////
+    /// MODIFIERS      ////
     ////////////////////////
 
     modifier notListed(
@@ -65,7 +75,7 @@ contract NftMarketplace {
     }
 
     ////////////////////////
-    //// MAIN FUNCTIONS ////
+    ///  MAIN FUNCTIONS ////
     ////////////////////////
 
     /**
@@ -101,7 +111,20 @@ contract NftMarketplace {
     function buyItem(
         address nftAddress,
         uint256 tokenId
-    ) external payable isListed(nftAddress, tokenId) {}
+    ) external payable isListed(nftAddress, tokenId) {
+        Listing memory listedItem = s_listings[nftAddress][tokenId];
+        if (msg.value < listedItem.price) {
+            revert NftMarketplace__PriceNotMet(nftAddress, tokenId);
+        }
+        s_proceeds[msg.sender] = s_proceeds[msg.sender] + msg.value;
+        delete (s_listings[nftAddress][tokenId]);
+        IERC721(nftAddress).safeTransferFrom(
+            listedItem.seller,
+            msg.sender,
+            tokenId
+        );
+        emit ItemBought(msg.sender, nftAddress, tokenId, listedItem.price);
+    }
 }
 
 // 1. A decentralized NFT Marketplace

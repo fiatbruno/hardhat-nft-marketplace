@@ -2,6 +2,7 @@
 pragma solidity ^0.8.17;
 
 import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
+import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 
 ////////////////////////
 //// ERRORS         ////
@@ -14,7 +15,7 @@ error NftMarketplace__NotOwner();
 error NftMarketplace__NotListed(address nftAddress, uint256 tokenId);
 error NftMarketplace__PriceNotMet(address nftAddress, uint256 tokenId);
 
-contract NftMarketplace {
+contract NftMarketplace is ReentrancyGuard {
     struct Listing {
         uint256 price;
         address seller;
@@ -31,6 +32,11 @@ contract NftMarketplace {
         address indexed nftAddress,
         uint256 indexed tokenId,
         uint256 price
+    );
+    event ItemCancelled(
+        address indexed seller,
+        address indexed nftAddress,
+        uint256 indexed tokenId
     );
 
     // NFT Contract Address -> NFT tokenId -> Listing
@@ -111,7 +117,7 @@ contract NftMarketplace {
     function buyItem(
         address nftAddress,
         uint256 tokenId
-    ) external payable isListed(nftAddress, tokenId) {
+    ) external payable nonReentrant isListed(nftAddress, tokenId) {
         Listing memory listedItem = s_listings[nftAddress][tokenId];
         if (msg.value < listedItem.price) {
             revert NftMarketplace__PriceNotMet(nftAddress, tokenId);
@@ -125,11 +131,36 @@ contract NftMarketplace {
         );
         emit ItemBought(msg.sender, nftAddress, tokenId, listedItem.price);
     }
+
+    function cancelItem(
+        address nftAddress,
+        uint256 tokenId
+    )
+        external
+        isOwner(nftAddress, tokenId, msg.sender)
+        isListed(nftAddress, tokenId)
+    {
+        delete (s_listings[nftAddress][tokenId]);
+        emit ItemCancelled(msg.sender, nftAddress, tokenId);
+    }
+
+    function updateListing(
+        address nftAddress,
+        uint256 tokenId,
+        uint256 newPrice
+    )
+        external
+        isListed(nftAddress, tokenId)
+        isOwner(nftAddress, tokenId, msg.sender)
+    {
+        s_listings[nftAddress][tokenId].price = newPrice;
+        emit ItemListed(msg.sender, nftAddress, tokenId, newPrice);
+    }
 }
 
 // 1. A decentralized NFT Marketplace
-//     1. `listItem`: List NFTs on the marketplace
-//     2. `buyItem`: Buy the NFTs
-//     3. `cancelItem`: Cancel a listing
+//     1. `listItem`: List NFTs on the marketplace ✅
+//     2. `buyItem`: Buy the NFTs ✅
+//     3. `cancelItem`: Cancel a listing ✅
 //     4. `updateListing`: Update price
 //     5. `withdrawProceeds`: Withdraw payment for my bought NFTs

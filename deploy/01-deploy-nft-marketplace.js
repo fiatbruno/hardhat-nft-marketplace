@@ -6,8 +6,6 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
     const { log, deploy } = deployments
     const { deployer } = await getNamedAccounts()
 
-    console.log(`Deployer Address: ${deployer}`)
-
     log("-----------------------------------------------------------")
 
     let args = []

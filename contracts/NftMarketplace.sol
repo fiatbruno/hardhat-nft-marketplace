@@ -58,6 +58,8 @@ contract NftMarketplace is ReentrancyGuard {
     // Seller Address -> Amount Earned
     mapping(address => uint256) private s_proceeds;
 
+    address payable contractOwner;
+
     ////////////////////////
     /// MODIFIERS      ////
     ////////////////////////
@@ -92,10 +94,17 @@ contract NftMarketplace is ReentrancyGuard {
         }
         _;
     }
+    modifier onlyOwner() {
+        require(msg.sender == contractOwner, "only owner");
+        _;
+    }
 
     ////////////////////////
     ///  MAIN FUNCTIONS ////
     ////////////////////////
+    constructor() {
+        contractOwner = payable(msg.sender);
+    }
 
     /**
      * @notice Method for listing your NFT to the marketplace
@@ -157,18 +166,6 @@ contract NftMarketplace is ReentrancyGuard {
         emit ItemCancelled(msg.sender, nftAddress, tokenId);
     }
 
-    function cancelListing(
-        address nftAddress,
-        uint256 tokenId
-    )
-        external
-        isOwner(nftAddress, tokenId, msg.sender)
-        isListed(nftAddress, tokenId)
-    {
-        delete (s_listings[nftAddress][tokenId]);
-        emit ItemCanceled(msg.sender, nftAddress, tokenId);
-    }
-
     function updateListing(
         address nftAddress,
         uint256 tokenId,
@@ -182,15 +179,7 @@ contract NftMarketplace is ReentrancyGuard {
         emit ItemListed(msg.sender, nftAddress, tokenId, newPrice);
     }
 
-    function withdrawProceeds(
-        address nftAddress,
-        uint256 tokenId
-    )
-        external
-        payable
-        notListed(nftAddress, tokenId, msg.sender)
-        isOwner(nftAddress, tokenId, msg.sender)
-    {
+    function withdrawProceeds() external payable onlyOwner {
         uint256 proceeds = s_proceeds[msg.sender];
         if (proceeds <= 0) {
             revert NftMarketplace__NoProceeds();

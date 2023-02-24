@@ -5,7 +5,7 @@ import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 
 ////////////////////////
-//// ERRORS         ////
+///  ERRORS         ////
 ////////////////////////
 
 error NftMarketplace__AlreadyListed(address nftAddress, uint256 tokenId);
@@ -45,6 +45,11 @@ contract NftMarketplace is ReentrancyGuard {
         address indexed NftAddress,
         uint256 indexed tokenId,
         uint256 amount
+    );
+    event ItemCanceled(
+        address indexed seller,
+        address indexed nftAddress,
+        uint256 indexed tokenId
     );
 
     // NFT Contract Address -> NFT tokenId -> Listing
@@ -130,7 +135,7 @@ contract NftMarketplace is ReentrancyGuard {
         if (msg.value < listedItem.price) {
             revert NftMarketplace__PriceNotMet(nftAddress, tokenId);
         }
-        s_proceeds[msg.sender] = s_proceeds[msg.sender] + msg.value;
+        s_proceeds[listedItem.seller] += msg.value;
         delete (s_listings[nftAddress][tokenId]);
         IERC721(nftAddress).safeTransferFrom(
             listedItem.seller,
@@ -150,6 +155,18 @@ contract NftMarketplace is ReentrancyGuard {
     {
         delete (s_listings[nftAddress][tokenId]);
         emit ItemCancelled(msg.sender, nftAddress, tokenId);
+    }
+
+    function cancelListing(
+        address nftAddress,
+        uint256 tokenId
+    )
+        external
+        isOwner(nftAddress, tokenId, msg.sender)
+        isListed(nftAddress, tokenId)
+    {
+        delete (s_listings[nftAddress][tokenId]);
+        emit ItemCanceled(msg.sender, nftAddress, tokenId);
     }
 
     function updateListing(

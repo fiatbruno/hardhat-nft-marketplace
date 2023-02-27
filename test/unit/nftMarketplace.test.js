@@ -4,6 +4,8 @@ const { expect, assert } = require("chai")
 const { network, getNamedAccounts, ethers, deployments } = require("hardhat")
 const { developmentChains } = require("../../helper-hardhat-config")
 
+const ETH_WHALE = "0xBE0eB53F46cd790Cd13851d5EFf43D12404d33E8"
+
 !developmentChains.includes(network.name)
     ? describe.skip
     : describe("NFT Marketplace Unit Tests", () => {
@@ -166,19 +168,62 @@ const { developmentChains } = require("../../helper-hardhat-config")
                       deployerBalanceAfter.add(gasCost).toString(),
                       deployerProceedsBefore.add(deployerBalanceBefore).toString()
                   )
-
-                  //TODO Test a failed transaction
-
-                  //   it("reverts as expected on failed transaction", async function () {
-                  //       const testHelperFactory = await ethers.getContractFactory("TestHelper")
-                  //       testHelper = await testHelperFactory.deploy()
-                  //       await testHelper.deployed()
-                  //       await expect(testHelper.testWithdrawProceeds()).to.be.revertedWithCustomError(
-                  //           nftMarketplace,
-                  //           "NftMarketplace__TransferFailed"
-                  //       )
-                  //   })
               })
+
+              //TODO Test a failed transaction
+              
+              //   it("reverts as expected on failed transaction", async function () {
+              //       const testHelperFactory = await ethers.getContractFactory("TestHelper")
+              //       testHelper = await testHelperFactory.deploy()
+              //       await testHelper.deployed()
+
+              //       await network.provider.request({
+              //           method: "hardhat_impersonateAccount",
+              //           params: [`${testHelper.address}`],
+              //       })
+              //       const testHelperSigner = await ethers.getSigner(`${testHelper.address}`)
+
+              //       await network.provider.request({
+              //           method: "hardhat_impersonateAccount",
+              //           params: [ETH_WHALE],
+              //       })
+
+              //       const ethWhaleSigner = await ethers.getSigner(`${ETH_WHALE}`)
+              //       console.log("1 -------- Problem Here!" + "Address:" + testHelperSigner.address)
+
+              //       const tx = await ethWhaleSigner.sendTransaction({
+              //           to: testHelperSigner.address,
+              //           value: ethers.utils.parseEther("1.0"),
+              //           gasLimit: "500000",
+              //       })
+              //       console.log("2 -------- Problem Here!")
+
+              //       await tx.wait(1)
+              //       console.log("3 -------- Problem Here!")
+
+              //       console.log("SENT FUNDS...")
+              //       nftMarketplace = await ethers.getContract("NftMarketplace", testHelperSigner)
+              //       console.log(
+              //           `Balance of testHelperSigner : ${(
+              //               await testHelperSigner.getBalance()
+              //           ).toString()}`
+              //       )
+              //       await nftMarketplace.listItem(basicNft.address, TOKEN_ID, PRICE)
+              //       const playerConnectedNftMarketplace = nftMarketplace.connect(player)
+              //       await playerConnectedNftMarketplace.buyItem(basicNft.address, TOKEN_ID, {
+              //           value: PRICE,
+              //       })
+              //       //! DEBUGGING
+              //       //! We know the testHelper contract is the msg.sender @ testWithdrawProcees() and as extension withdrawProceeds()
+              //       //! Let's find a way to transform an contract address into a VALID hardhat account
+              //       console.log(
+              //          `---------Deployer: ${deployer}, player: ${player.address}, TestHelper: ${testHelper.address}---------`
+              //       )
+              //       await expect(testHelper.testWithdrawProceeds()).to.be.revertedWithCustomError(
+              //           nftMarketplace,
+              //           "NftMarketplace__TransferFailed"
+              //       )
+              //   })
               it("reverts when proceeds are less that zero", async () => {
                   await expect(nftMarketplace.withdrawProceeds()).to.be.revertedWithCustomError(
                       nftMarketplace,

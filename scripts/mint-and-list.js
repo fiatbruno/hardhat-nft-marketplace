@@ -1,10 +1,9 @@
-//TODO Test this script by running : `hh node` and then `hh run scripts/mint-and-list.js`
-
 const { ethers } = require("hardhat")
 
 async function mintAndList() {
-    const nftMarketPlace = await ethers.getContract("NftMarketPlace")
+    const nftMarketPlace = await ethers.getContract("NftMarketplace")
     const basicNft = await ethers.getContract("BasicNft")
+    const PRICE = ethers.utils.parseEther("0.01")
 
     console.log("Minting...")
     const mintTx = await basicNft.mintNft()
@@ -16,7 +15,7 @@ async function mintAndList() {
     await approvalTx.wait(1)
 
     console.log("Listing NFT...")
-    const tx = nftMarketPlace.listItem(basicNft.address, tokenId)
+    const tx = await nftMarketPlace.listItem(basicNft.address, tokenId, PRICE)
     await tx.wait(1)
     console.log("Listed! ✨")
 }
